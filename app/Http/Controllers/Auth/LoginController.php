@@ -2,38 +2,103 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
+
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
-
-    use AuthenticatesUsers;
 
     /**
-     * Where to redirect users after login.
+     * Formulário de login
      *
-     * @var string
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    protected $redirectTo = '/home';
-
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    public function form()
     {
-        $this->middleware('guest')->except('logout');
+        return view('auth.login');
+    }
+
+    /**
+     * Autenticação
+     *
+     * @param Request $request
+     * @return bool|\Illuminate\Http\RedirectResponse
+     */
+    public function login(Request $request)
+    {
+        $this->validator();
+        $credentials = $request->only('email', 'password');
+
+
+        if ($auth = $this->adminAuth($credentials)) {
+            return $auth;
+        }
+
+        if ($auth = $this->subadminAuth($credentials)) {
+            return $auth;
+        }
+
+        if ($auth = $this->accountAuth($credentials)) {
+            return $auth;
+        }
+
+        // Credenciais inválidas
+        return redirect()->back()
+            ->withErrors('As credenciais informadas são inválidas. Verifique!');
+    }
+
+    /**
+     * Validação
+     */
+    private function validator()
+    {
+        $this->validate(request(), [
+            'email' => 'required',
+            'password' => 'required',
+        ]);
+    }
+
+    private function adminAuth(array $credentials)
+    {
+        $authorized = Auth::guard('admin')->attempt([
+            'email'    => $credentials['email'],
+            'password' => $credentials['password'],
+        ], false);
+
+        if (!$authorized) {
+            return false;
+        }
+
+        return redirect()->route('admin.dashboard.index');
+    }
+
+    private function subadminAuth(array $credentials)
+    {
+        $authorized = Auth::guard('subadmin')->attempt([
+            'email'    => $credentials['email'],
+            'password' => $credentials['password'],
+        ], false);
+
+        if (!$authorized) {
+            return false;
+        }
+
+        return redirect()->route('subadmin.dashboard.index');
+    }
+
+    private function accountAuth(array $credentials)
+    {
+        $authorized = Auth::guard('account')->attempt([
+            'email'    => $credentials['email'],
+            'password' => $credentials['password'],
+        ], false);
+
+        if (!$authorized) {
+            return false;
+        }
+
+        return redirect()->route('account.dashboard.index');
     }
 }

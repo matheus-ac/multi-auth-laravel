@@ -41,6 +41,15 @@ class Kernel extends HttpKernel
             'throttle:60,1',
             'bindings',
         ],
+        'admin' => [
+            \App\Http\Middleware\AuthAdmin::class,
+        ],
+        'subadmin' => [
+            \App\Http\Middleware\AuthSubadmin::class,
+        ],
+        'account' => [
+            \App\Http\Middleware\AuthAccount::class,
+        ],
     ];
 
     /**
